@@ -1,0 +1,12 @@
+tx_c1_fluid_styled_svg {
+    settings {
+        // inline files smaller than this value. Bigger svgs are loaded using ajax.
+        inlineSmallerThan = {$tx_c1_fluid_styled_svg.settings.inlineSmallerThan}
+    }
+}
+
+page {
+    includeJSFooter {
+        fluid_styled_svg = {$tx_c1_fluid_styled_svg.settings.js}
+    }
+}
