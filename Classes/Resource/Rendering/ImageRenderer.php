@@ -9,6 +9,7 @@ use TYPO3\CMS\Core\TypoScript\TemplateService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Reflection\ObjectAccess;
 use TYPO3\CMS\Extbase\Service\TypoScriptService;
+use TYPO3\CMS\Extbase\Utility\DebuggerUtility;
 use TYPO3\CMS\Fluid\Core\ViewHelper\TagBuilder;
 use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
 
@@ -119,7 +120,7 @@ class ImageRenderer implements FileRendererInterface
             $this->defaultProcessConfiguration = [];
             $this->defaultProcessConfiguration['width'] = (int)$width;
             $this->defaultProcessConfiguration['height'] = (int)$height;
-            // cropping not implemented yet. maybe possible with manipulating the viewport ofthe svg
+            // cropping not implemented yet. maybe possible with manipulating the viewport of the svg
             $this->defaultProcessConfiguration['crop'] = $this->originalFile->getProperty('crop');
         } catch (\InvalidArgumentException $e) {
             $this->defaultProcessConfiguration['crop'] = '';
@@ -150,17 +151,16 @@ class ImageRenderer implements FileRendererInterface
      */
     protected function renderObjectTag()
     {
-
-        $this->tagBuilder->reset();
-        $this->tagBuilder->setTagName('object');
-        $this->tagBuilder->addAttribute('data', $this->imageFile->getPublicUrl());
-        $this->tagBuilder->addAttribute('type', 'image/svg+xml');
-        $this->tagBuilder->addAttribute('name', $this->altText);
-        $this->tagBuilder->addAttribute('width', $this->imageFile->getProperty('width'));
-        $this->tagBuilder->addAttribute('height', $this->imageFile->getProperty('height'));
-        $this->tagBuilder->forceClosingTag(true);
-
-        return $this->tagBuilder->render();
+        $tagBuilder = new $this->tagBuilder();
+        $tagBuilder->reset();
+        $tagBuilder->setTagName('object');
+        $tagBuilder->addAttribute('data', $this->imageFile->getPublicUrl());
+        $tagBuilder->addAttribute('type', 'image/svg+xml');
+        $tagBuilder->addAttribute('name', $this->altText);
+        $tagBuilder->addAttribute('width', $this->defaultProcessConfiguration['width']);
+        $tagBuilder->addAttribute('height', $this->defaultProcessConfiguration['height']);
+        $tagBuilder->forceClosingTag(true);
+        return $tagBuilder->render();
     }
 
 
@@ -170,21 +170,39 @@ class ImageRenderer implements FileRendererInterface
      */
     protected function renderImg()
     {
+        $tagBuilder = new $this->tagBuilder();
         if ($this->imageFile->getSize() < $this->settings['inlineSmallerThan']) {
+            // inline the svg
             $svgRaw = $this->imageFile->getContents();
-            return $svgRaw;
+            $svgTemplate = new \SimpleXMLElement($svgRaw);
+            $svgTemplate->registerXPathNamespace('svg', 'http://www.w3.org/2000/svg');
+            // set or modify width and height attributes of the svg
+            foreach($svgTemplate->attributes() as $key => $value) {
+                if ($key === "width") {
+                    $svgTemplate->attributes()->width = $this->defaultProcessConfiguration['width'];
+                } else {
+                    $svgTemplate->addAttribute('width', $this->defaultProcessConfiguration['width']);
+                }
+                if ($key === "height") {
+                    $svgTemplate->attributes()->height = $this->defaultProcessConfiguration['height'];
+                } else {
+                    $svgTemplate->addAttribute('height', $this->defaultProcessConfiguration['height']);
+                }
+            }
+            return $svgTemplate->asXML();
         } else {
-            $this->tagBuilder->reset();
-            $this->tagBuilder->setTagName('noscript');
-            $this->tagBuilder->setContent($this->renderObjectTag());
-            $noscriptTag = $this->tagBuilder->render();
-            $this->tagBuilder->reset();
-            $this->tagBuilder->setTagName('div');
-            $this->tagBuilder->forceClosingTag(true);
-            $this->tagBuilder->addAttribute('class', 'svg-ajaxload');
-            $this->tagBuilder->addAttribute('data-src', $this->imageFile->getPublicUrl());
-            $this->tagBuilder->setContent($noscriptTag);
-            return $this->tagBuilder->render();
+            $tagBuilder->reset();
+            $tagBuilder->setTagName('noscript');
+            $tagBuilder->forceClosingTag(true);
+            $tagBuilder->setContent($this->renderObjectTag());
+            $noscriptTag = $tagBuilder->render();
+            $tagBuilder->reset();
+            $tagBuilder->setTagName('div');
+            $tagBuilder->forceClosingTag(true);
+            $tagBuilder->addAttribute('class', 'svg-ajaxload');
+            $tagBuilder->addAttribute('data-src', $this->imageFile->getPublicUrl());
+            $tagBuilder->setContent($noscriptTag);
+            return $tagBuilder->render();
         }
     }
 
