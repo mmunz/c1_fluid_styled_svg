@@ -191,17 +191,27 @@ class ImageRenderer implements FileRendererInterface
             }
             return $svgTemplate->asXML();
         } else {
-            $tagBuilder->reset();
-            $tagBuilder->setTagName('noscript');
-            $tagBuilder->forceClosingTag(true);
-            $tagBuilder->setContent($this->renderObjectTag());
-            $noscriptTag = $tagBuilder->render();
-            $tagBuilder->reset();
-            $tagBuilder->setTagName('div');
-            $tagBuilder->forceClosingTag(true);
+
+            $tagBuilder->setTagName('object');
+            $tagBuilder->addAttribute('data', $this->imageFile->getPublicUrl());
+            $tagBuilder->addAttribute('type', 'image/svg+xml');
+            $tagBuilder->addAttribute('name', $this->altText);
             $tagBuilder->addAttribute('class', 'svg-ajaxload');
-            $tagBuilder->addAttribute('data-src', $this->imageFile->getPublicUrl());
-            $tagBuilder->setContent($noscriptTag);
+            $tagBuilder->addAttribute('width', $this->defaultProcessConfiguration['width']);
+            $tagBuilder->addAttribute('height', $this->defaultProcessConfiguration['height']);
+            $tagBuilder->forceClosingTag(true);
+
+//            $tagBuilder->reset();
+//            $tagBuilder->setTagName('noscript');
+//            $tagBuilder->forceClosingTag(true);
+//            $tagBuilder->setContent($this->renderObjectTag());
+//            $noscriptTag = $tagBuilder->render();
+//            $tagBuilder->reset();
+//            $tagBuilder->setTagName('div');
+//            $tagBuilder->forceClosingTag(true);
+//            $tagBuilder->addAttribute('class', 'svg-ajaxload');
+//            $tagBuilder->addAttribute('data-src', $this->imageFile->getPublicUrl());
+//            $tagBuilder->setContent($noscriptTag);
             return $tagBuilder->render();
         }
     }
