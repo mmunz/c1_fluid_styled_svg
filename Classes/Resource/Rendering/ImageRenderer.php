@@ -9,7 +9,6 @@ use TYPO3\CMS\Core\TypoScript\TemplateService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Reflection\ObjectAccess;
 use TYPO3\CMS\Extbase\Service\TypoScriptService;
-use TYPO3\CMS\Extbase\Utility\DebuggerUtility;
 use TYPO3\CMS\Fluid\Core\ViewHelper\TagBuilder;
 use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
 
@@ -20,6 +19,9 @@ use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
  */
 class ImageRenderer implements FileRendererInterface
 {
+
+    const WRAPPERCLASS = 'c1-svg__wrapper';
+    const IMAGECLASS = 'c1-svg__image';
 
     /**
      * @var TypoScriptService
@@ -74,6 +76,16 @@ class ImageRenderer implements FileRendererInterface
     protected $defaultProcessConfiguration;
 
     /**
+     * @var array
+     */
+    protected $options;
+
+    /**
+     * @var array
+     */
+    protected $imgClassNames;
+
+    /**
      * constructor
      */
     public function __construct()
@@ -107,8 +119,8 @@ class ImageRenderer implements FileRendererInterface
      */
     protected function init($file, $width, $height, $options)
     {
-
         $this->originalFile = $file;
+
 
         if ($file instanceof FileReference) {
             $this->imageFile = $file->getOriginalFile();
@@ -143,25 +155,63 @@ class ImageRenderer implements FileRendererInterface
         if (is_array($options['additionalAttributes'])) {
             $this->additionalAttributes = $options['additionalAttributes'];
         }
+
+        if ($options['class']) {
+            $this->addImgClassNames($options['class']);
+        }
+        $this->addImgClassNames(self::IMAGECLASS);
+        $this->options = $options;
     }
 
     /**
-     * Renders the object tag
+     * Adds one or more classes to this->imageClassNames
+     * @return void
+     */
+    protected function addImgClassNames($classNames)
+    {
+        foreach (explode(' ', $classNames) as $cl) {
+            if (! in_array($cl, $this->imgClassNames)) {
+                $this->imgClassNames[] = $cl;
+            }
+        }
+    }
+
+    /**
+     * Outputs the current css classes as string
      * @return string
      */
-    protected function renderObjectTag()
+    protected function getImgClassNames()
     {
+        return implode(" ", $this->imgClassNames);
+    }
+
+    /**
+     * Returns the current aspect ratio of the svg
+     * @return float
+     */
+    protected function getAspectRatio()
+    {
+        return ($this->defaultProcessConfiguration['height'] / $this->defaultProcessConfiguration['width']) * 100;
+    }
+
+    /**
+     * Render a ratio box wrapper tag
+     * @return string
+     */
+    protected function ratioBox($content)
+    {
+        $aspectRatio = $this->getAspectRatio();
         $tagBuilder = new $this->tagBuilder();
-        $tagBuilder->reset();
-        $tagBuilder->setTagName('object');
-        $tagBuilder->addAttribute('data', $this->imageFile->getPublicUrl());
-        $tagBuilder->addAttribute('type', 'image/svg+xml');
-        $tagBuilder->addAttribute('name', $this->altText);
-        $tagBuilder->addAttribute('width', $this->defaultProcessConfiguration['width']);
-        $tagBuilder->addAttribute('height', $this->defaultProcessConfiguration['height']);
-        $tagBuilder->forceClosingTag(true);
+        $tagBuilder->setTagName('div');
+        $tagBuilder->addAttribute('class', self::WRAPPERCLASS);
+        $tagBuilder->addAttribute(
+            'style',
+            'padding-bottom:' . $aspectRatio . '%;width:' . $this->defaultProcessConfiguration['width'] . 'px'
+        );
+        $tagBuilder->setContent($content);
         return $tagBuilder->render();
     }
+
 
 
     /**
@@ -179,40 +229,32 @@ class ImageRenderer implements FileRendererInterface
             // set or modify width and height attributes of the svg
             foreach($svgTemplate->attributes() as $key => $value) {
                 if ($key === "width") {
-                    $svgTemplate->attributes()->width = $this->defaultProcessConfiguration['width'];
+                    $svgTemplate->attributes()->width = '100%';
                 } else {
-                    $svgTemplate->addAttribute('width', $this->defaultProcessConfiguration['width']);
+                    $svgTemplate->addAttribute('width', '100%');
                 }
                 if ($key === "height") {
-                    $svgTemplate->attributes()->height = $this->defaultProcessConfiguration['height'];
+                    $svgTemplate->attributes()->height = '100%';
                 } else {
-                    $svgTemplate->addAttribute('height', $this->defaultProcessConfiguration['height']);
+                    $svgTemplate->addAttribute('height', '100%');
+                }
+                if ($key === "class") {
+                    $svgTemplate->attributes()->class = $this->getImgClassNames() . ' c1-svg__image--inline';
+                } else {
+                    $svgTemplate->addAttribute('class', $this->getImgClassNames() . ' c1-svg__image--inline');
                 }
             }
-            return $svgTemplate->asXML();
+            return $this->ratioBox($svgTemplate->asXML());
         } else {
-
             $tagBuilder->setTagName('object');
             $tagBuilder->addAttribute('data', $this->imageFile->getPublicUrl());
             $tagBuilder->addAttribute('type', 'image/svg+xml');
             $tagBuilder->addAttribute('name', $this->altText);
-            $tagBuilder->addAttribute('class', 'svg-ajaxload');
+            $tagBuilder->addAttribute('class', $this->getImgClassNames() . ' c1-svg__image--inject');
             $tagBuilder->addAttribute('width', $this->defaultProcessConfiguration['width']);
             $tagBuilder->addAttribute('height', $this->defaultProcessConfiguration['height']);
             $tagBuilder->forceClosingTag(true);
-
-//            $tagBuilder->reset();
-//            $tagBuilder->setTagName('noscript');
-//            $tagBuilder->forceClosingTag(true);
-//            $tagBuilder->setContent($this->renderObjectTag());
-//            $noscriptTag = $tagBuilder->render();
-//            $tagBuilder->reset();
-//            $tagBuilder->setTagName('div');
-//            $tagBuilder->forceClosingTag(true);
-//            $tagBuilder->addAttribute('class', 'svg-ajaxload');
-//            $tagBuilder->addAttribute('data-src', $this->imageFile->getPublicUrl());
-//            $tagBuilder->setContent($noscriptTag);
-            return $tagBuilder->render();
+            return $this->ratioBox($tagBuilder->render());
         }
     }
 

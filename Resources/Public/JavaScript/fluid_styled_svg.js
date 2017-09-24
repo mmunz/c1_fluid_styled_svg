@@ -1,25 +1,20 @@
 // replace all svg object tags with inline svg
 
 function injectSvg(target) {
-    console.log("inject svg");
     var xmlDoc = target.contentDocument.documentElement;
+    var svg = $(xmlDoc)[0];
     var width = target.getAttribute('width');
     var height = target.getAttribute('height');
-    var aspectRatio = (height / width) * 100;
+    var classNames = target.getAttribute('class').replace('c1-svg__image--inject', 'c1-svg__image--injected');
 
-    var svg = $(xmlDoc)[0];
     svg.setAttribute('width', '100%');
     svg.setAttribute('height', '100%');
-
-    var svgAndRatiobox = document.createElement("div");
-    svgAndRatiobox.setAttribute('class', 'svg-ratiobox');
-    svgAndRatiobox.setAttribute('style', 'padding-bottom:'+ aspectRatio +'%;width:' + width + 'px');
-    svgAndRatiobox.appendChild(svg);
-    target.parentNode.replaceChild(svgAndRatiobox, target);
+    svg.setAttribute('class', classNames);
+    target.parentNode.replaceChild(svg, target);
 };
 
 function svgInline() {
-    var elements = document.getElementsByClassName("svg-ajaxload");
+    var elements = document.getElementsByClassName("c1-svg__image--inject");
     for(var i=0; i<elements.length; i++)
     {
         var el = elements[i];
