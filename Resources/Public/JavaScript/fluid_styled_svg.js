@@ -27,6 +27,6 @@ function svgInline() {
     }
 }
 
-$(function () {
-   svgInline();
+(function(fn){var d=document;(d.readyState=='loading')?d.addEventListener('DOMContentLoaded',fn):fn();})(function(){
+    svgInline();
 });
