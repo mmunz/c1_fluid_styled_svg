@@ -6,6 +6,9 @@ tx_c1_fluid_styled_svg {
 }
 
 page {
+    includeCSS {
+        fluid_styled_svg = {$tx_c1_fluid_styled_svg.settings.css}
+    }
     includeJSFooter {
         fluid_styled_svg = {$tx_c1_fluid_styled_svg.settings.js}
     }
