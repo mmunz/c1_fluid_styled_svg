@@ -224,27 +224,16 @@ class ImageRenderer implements FileRendererInterface
         if ($this->imageFile->getSize() < $this->settings['inlineSmallerThan']) {
             // inline the svg
             $svgRaw = $this->imageFile->getContents();
-            $svgTemplate = new \SimpleXMLElement($svgRaw);
-            $svgTemplate->registerXPathNamespace('svg', 'http://www.w3.org/2000/svg');
-            // set or modify width and height attributes of the svg
-            foreach($svgTemplate->attributes() as $key => $value) {
-                if ($key === "width") {
-                    $svgTemplate->attributes()->width = '100%';
-                } else {
-                    $svgTemplate->addAttribute('width', '100%');
-                }
-                if ($key === "height") {
-                    $svgTemplate->attributes()->height = '100%';
-                } else {
-                    $svgTemplate->addAttribute('height', '100%');
-                }
-                if ($key === "class") {
-                    $svgTemplate->attributes()->class = $this->getImgClassNames() . ' c1-svg__image--inline';
-                } else {
-                    $svgTemplate->addAttribute('class', $this->getImgClassNames() . ' c1-svg__image--inline');
-                }
-            }
-            return $this->ratioBox($svgTemplate->asXML());
+            $xmlDocument = new \DOMDocument();
+            $xmlDocument->formatOutput = true;
+            $xmlDocument->loadXML($svgRaw, LIBXML_NSCLEAN);
+            $xmlDocument->documentElement->setAttribute('width', '100%');
+            $xmlDocument->documentElement->setAttribute('height', '100%');
+            $xmlDocument->documentElement->setAttribute(
+                'class',
+                $this->getImgClassNames() . ' c1-svg__image--inline'
+            );
+            return $this->ratioBox($xmlDocument->saveXML($xmlDocument->documentElement));
         } else {
             $tagBuilder->setTagName('object');
             $tagBuilder->addAttribute('data', $this->imageFile->getPublicUrl());
