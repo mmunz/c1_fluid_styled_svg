@@ -2,6 +2,7 @@
 
 namespace C1\FluidStyledSvg\Resource\Rendering;
 
+use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Resource\FileInterface;
 use TYPO3\CMS\Core\Resource\FileReference;
 use TYPO3\CMS\Core\Resource\Rendering\FileRendererInterface;
@@ -27,6 +28,9 @@ class ImageRenderer implements FileRendererInterface
      * @var TypoScriptService
      */
     protected $typoScriptService;
+
+    /** @var PageRenderer */
+    protected $pageRenderer;
 
     /**
      * @var TagBuilder
@@ -92,6 +96,7 @@ class ImageRenderer implements FileRendererInterface
     {
         $this->settings = [];
         $this->typoScriptService = GeneralUtility::makeInstance(TypoScriptService::class);
+        $this->pageRenderer = GeneralUtility::makeInstance(PageRenderer::class);
         $this->tagBuilder = GeneralUtility::makeInstance(TagBuilder::class);
         $this->getConfiguration();
     }
@@ -128,15 +133,11 @@ class ImageRenderer implements FileRendererInterface
             $this->imageFile = $file;
         }
 
-        try {
-            $this->defaultProcessConfiguration = [];
-            $this->defaultProcessConfiguration['width'] = (int)$width;
-            $this->defaultProcessConfiguration['height'] = (int)$height;
-            // cropping not implemented yet. maybe possible with manipulating the viewport of the svg
-            $this->defaultProcessConfiguration['crop'] = $this->originalFile->getProperty('crop');
-        } catch (\InvalidArgumentException $e) {
-            $this->defaultProcessConfiguration['crop'] = '';
-        }
+        $this->defaultProcessConfiguration = [];
+        $this->defaultProcessConfiguration['width'] = (int)$width;
+        $this->defaultProcessConfiguration['height'] = (int)$height;
+        // cropping not implemented yet. maybe possible with manipulating the viewport of the svg
+        // $this->defaultProcessConfiguration['crop'] = $this->originalFile->getProperty('crop');
 
         // alternative text
         if ($options['alt']) {
@@ -191,7 +192,8 @@ class ImageRenderer implements FileRendererInterface
      */
     protected function getAspectRatio()
     {
-        return ($this->defaultProcessConfiguration['height'] / $this->defaultProcessConfiguration['width']) * 100;
+        $ratio = ($this->defaultProcessConfiguration['height'] / $this->defaultProcessConfiguration['width']) * 100;
+        return round($ratio, 2);
     }
 
     /**
@@ -201,18 +203,26 @@ class ImageRenderer implements FileRendererInterface
     protected function ratioBox($content)
     {
         $aspectRatio = $this->getAspectRatio();
+        $aspectRatioDotted = \preg_replace('/\./i', 'dot', $aspectRatio);
         $tagBuilder = new $this->tagBuilder();
         $tagBuilder->setTagName('div');
-        $tagBuilder->addAttribute('class', self::WRAPPERCLASS);
-        $tagBuilder->addAttribute(
-            'style',
-            'padding-bottom:' . $aspectRatio . '%;width:' . $this->defaultProcessConfiguration['width'] . 'px'
+
+
+
+        $className = 'c1-svg__wrapper--pb-' . $aspectRatioDotted . '-w-' . $this->defaultProcessConfiguration['width'];
+        $css = sprintf(
+            '.%s{padding-bottom:%s%%;width:%spx}',
+            $className,
+            $aspectRatio,
+            $this->defaultProcessConfiguration['width']
         );
+        // add css for the className to the head.
+        // Because of the unique key used there won't be multiple css rules for the same thing.
+        $this->pageRenderer->addCssInlineBlock($className, $css, true);
+        $tagBuilder->addAttribute('class', self::WRAPPERCLASS . ' ' . $className);
         $tagBuilder->setContent($content);
         return $tagBuilder->render();
     }
-
-
 
     /**
      * Renders the image tag
