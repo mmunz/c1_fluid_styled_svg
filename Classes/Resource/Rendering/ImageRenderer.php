@@ -8,8 +8,10 @@ use TYPO3\CMS\Core\Resource\FileReference;
 use TYPO3\CMS\Core\Resource\Rendering\FileRendererInterface;
 use TYPO3\CMS\Core\TypoScript\TemplateService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Extbase\Object\ObjectManager;
 use TYPO3\CMS\Extbase\Reflection\ObjectAccess;
 use TYPO3\CMS\Extbase\Service\TypoScriptService;
+use TYPO3\CMS\Extbase\Utility\DebuggerUtility;
 use TYPO3\CMS\Fluid\Core\ViewHelper\TagBuilder;
 use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
 
@@ -24,8 +26,11 @@ class ImageRenderer implements FileRendererInterface
     const WRAPPERCLASS = 'c1-svg__wrapper';
     const IMAGECLASS = 'c1-svg__image';
 
+    /** @var ObjectManager */
+    protected $objectManager;
+
     /**
-     * @var TypoScriptService
+     * @var TYPO3\CMS\Extbase\Service\TypoScriptService
      */
     protected $typoScriptService;
 
@@ -36,6 +41,11 @@ class ImageRenderer implements FileRendererInterface
      * @var TagBuilder
      */
     protected $tagBuilder;
+
+    /**
+     * @var C1\FluidStyledSvg\Utility\FileUtility
+     */
+    protected $fileUtility;
 
     /**
      * @var array
@@ -95,9 +105,11 @@ class ImageRenderer implements FileRendererInterface
     public function __construct()
     {
         $this->settings = [];
-        $this->typoScriptService = GeneralUtility::makeInstance(TypoScriptService::class);
-        $this->pageRenderer = GeneralUtility::makeInstance(PageRenderer::class);
-        $this->tagBuilder = GeneralUtility::makeInstance(TagBuilder::class);
+        $this->objectManager = GeneralUtility::makeInstance('TYPO3\CMS\Extbase\Object\ObjectManager');
+        $this->typoScriptService = $this->objectManager->get('TYPO3\\CMS\\Extbase\\Service\\TypoScriptService');
+        $this->pageRenderer = $this->objectManager->get('TYPO3\\CMS\\Core\\Page\\PageRenderer');
+        $this->tagBuilder = $this->objectManager->get('TYPO3\\CMS\\Fluid\\Core\\ViewHelper\\TagBuilder');
+        $this->fileUtility = $this->objectManager->get('C1\\FluidStyledSvg\\Utility\\FileUtility');
         $this->getConfiguration();
     }
 
@@ -126,6 +138,7 @@ class ImageRenderer implements FileRendererInterface
     {
         $this->originalFile = $file;
 
+        DebuggerUtility::var_dump($file);
 
         if ($file instanceof FileReference) {
             $this->imageFile = $file->getOriginalFile();
@@ -140,16 +153,7 @@ class ImageRenderer implements FileRendererInterface
         // $this->defaultProcessConfiguration['crop'] = $this->originalFile->getProperty('crop');
 
         // alternative text
-        if ($options['alt']) {
-            $this->altText = $options['alt'];
-        } else {
-            $altText = $this->imageFile->getProperty('alternative');
-            $this->altText = $altText ? $this->imageFile->getProperty(
-                'alternative'
-            ) : $this->imageFile->getProperty(
-                'name'
-            );
-        }
+        $this->altText = $this->fileUtility->getAltText($this->imageFile, $options);
 
         is_array($options['additionalConfig']) ? $this->additionalConfig = $options['additionalConfig'] : null;
 
@@ -248,7 +252,9 @@ class ImageRenderer implements FileRendererInterface
             $tagBuilder->setTagName('object');
             $tagBuilder->addAttribute('data', $this->imageFile->getPublicUrl());
             $tagBuilder->addAttribute('type', 'image/svg+xml');
-            $tagBuilder->addAttribute('name', $this->altText);
+            if (!empty($this->altText)) {
+                $tagBuilder->addAttribute('name', $this->altText);
+            };
             $tagBuilder->addAttribute('class', $this->getImgClassNames() . ' c1-svg__image--inject');
             $tagBuilder->addAttribute('width', $this->defaultProcessConfiguration['width']);
             $tagBuilder->addAttribute('height', $this->defaultProcessConfiguration['height']);
