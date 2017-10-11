@@ -11,7 +11,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Object\ObjectManager;
 use TYPO3\CMS\Extbase\Reflection\ObjectAccess;
 use TYPO3\CMS\Extbase\Service\TypoScriptService;
-use TYPO3\CMS\Extbase\Utility\DebuggerUtility;
 use TYPO3\CMS\Fluid\Core\ViewHelper\TagBuilder;
 use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
 
@@ -137,8 +136,6 @@ class ImageRenderer implements FileRendererInterface
     protected function init($file, $width, $height, $options)
     {
         $this->originalFile = $file;
-
-        DebuggerUtility::var_dump($file);
 
         if ($file instanceof FileReference) {
             $this->imageFile = $file->getOriginalFile();
