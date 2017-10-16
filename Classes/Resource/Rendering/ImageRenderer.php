@@ -6,14 +6,9 @@ use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Resource\FileInterface;
 use TYPO3\CMS\Core\Resource\FileReference;
 use TYPO3\CMS\Core\Resource\Rendering\FileRendererInterface;
-use TYPO3\CMS\Core\TypoScript\TemplateService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Object\ObjectManager;
-use TYPO3\CMS\Extbase\Reflection\ObjectAccess;
-use TYPO3\CMS\Extbase\Service\TypoScriptService;
 use TYPO3\CMS\Fluid\Core\ViewHelper\TagBuilder;
-use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
-
 
 /**
  * Class ImageRenderer
@@ -25,15 +20,14 @@ class ImageRenderer implements FileRendererInterface
     const WRAPPERCLASS = 'c1-svg__wrapper';
     const IMAGECLASS = 'c1-svg__image';
 
-    /** @var ObjectManager */
+    /**
+     * @var ObjectManager
+     */
     protected $objectManager;
 
     /**
-     * @var TYPO3\CMS\Extbase\Service\TypoScriptService
+     * @var PageRenderer
      */
-    protected $typoScriptService;
-
-    /** @var PageRenderer */
     protected $pageRenderer;
 
     /**
@@ -42,9 +36,14 @@ class ImageRenderer implements FileRendererInterface
     protected $tagBuilder;
 
     /**
-     * @var C1\FluidStyledSvg\Utility\FileUtility
+     * @var \C1\FluidStyledSvg\Utility\FileUtility
      */
     protected $fileUtility;
+
+    /**
+     * @var \C1\FluidStyledSvg\Utility\ConfigurationUtility
+     */
+    protected $configurationUtility;
 
     /**
      * @var array
@@ -103,13 +102,12 @@ class ImageRenderer implements FileRendererInterface
      */
     public function __construct()
     {
-        $this->settings = [];
         $this->objectManager = GeneralUtility::makeInstance('TYPO3\CMS\Extbase\Object\ObjectManager');
-        $this->typoScriptService = $this->objectManager->get('TYPO3\\CMS\\Extbase\\Service\\TypoScriptService');
         $this->pageRenderer = $this->objectManager->get('TYPO3\\CMS\\Core\\Page\\PageRenderer');
         $this->tagBuilder = $this->objectManager->get('TYPO3\\CMS\\Fluid\\Core\\ViewHelper\\TagBuilder');
         $this->fileUtility = $this->objectManager->get('C1\\FluidStyledSvg\\Utility\\FileUtility');
-        $this->getConfiguration();
+        $this->configurationUtility = $this->objectManager->get('C1\\FluidStyledSvg\\Utility\\ConfigurationUtility');
+        $this->settings = $this->configurationUtility->getConfiguration();
     }
 
     /**
@@ -258,31 +256,6 @@ class ImageRenderer implements FileRendererInterface
             $tagBuilder->forceClosingTag(true);
             return $this->ratioBox($tagBuilder->render());
         }
-    }
-
-    /**
-     * @return array
-     */
-    protected function getTypoScriptSetup()
-    {
-        if (!$GLOBALS['TSFE'] instanceof TypoScriptFrontendController) {
-            return [];
-        }
-
-        if (!$GLOBALS['TSFE']->tmpl instanceof TemplateService) {
-            return [];
-        }
-        return $GLOBALS['TSFE']->tmpl->setup;
-    }
-
-    /**
-     * @return void
-     */
-    protected function getConfiguration()
-    {
-        $configuration = $this->typoScriptService->convertTypoScriptArrayToPlainArray($this->getTypoScriptSetup());
-        $settings = ObjectAccess::getPropertyPath($configuration, 'tx_c1_fluid_styled_svg.settings');
-        $this->settings = is_array($settings) ? $settings : [];
     }
 
     /**
