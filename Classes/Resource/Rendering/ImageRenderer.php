@@ -8,7 +8,7 @@ use TYPO3\CMS\Core\Resource\FileReference;
 use TYPO3\CMS\Core\Resource\Rendering\FileRendererInterface;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Object\ObjectManager;
-use TYPO3\CMS\Fluid\Core\ViewHelper\TagBuilder;
+use TYPO3Fluid\Fluid\Core\ViewHelper\TagBuilder;
 
 /**
  * Class ImageRenderer
@@ -104,7 +104,7 @@ class ImageRenderer implements FileRendererInterface
     {
         $this->objectManager = GeneralUtility::makeInstance('TYPO3\CMS\Extbase\Object\ObjectManager');
         $this->pageRenderer = $this->objectManager->get('TYPO3\\CMS\\Core\\Page\\PageRenderer');
-        $this->tagBuilder = $this->objectManager->get('TYPO3\\CMS\\Fluid\\Core\\ViewHelper\\TagBuilder');
+        $this->tagBuilder = $this->objectManager->get('TYPO3Fluid\\Fluid\\Core\\ViewHelper\\TagBuilder');
         $this->fileUtility = $this->objectManager->get('C1\\FluidStyledSvg\\Utility\\FileUtility');
         $this->configurationUtility = $this->objectManager->get('C1\\FluidStyledSvg\\Utility\\ConfigurationUtility');
         $this->settings = $this->configurationUtility->getConfiguration();

@@ -1,7 +1,6 @@
 {
     "name": "c1/c1-fluid-styled-svg",
     "type": "typo3-cms-extension",
-    "version": "0.9.1",
     "description": "Better svg rendering with the f:media viewhelper. Registers a custom ImageRenderer for svg.",
     "keywords": [
         "TYPO3",
@@ -19,7 +18,7 @@
         }
     ],
     "require": {
-        "php": ">=5.5.0"
+        "typo3/cms-core": "^10.4.6"
     },
     "autoload": {
         "psr-4": {

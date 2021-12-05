@@ -2,6 +2,8 @@
 
 namespace C1\FluidStyledSvg\Utility;
 
+use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
+use TYPO3\CMS\Core\TypoScript\TemplateService;
 use TYPO3\CMS\Core\TypoScript\TypoScriptService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Reflection\ObjectAccess;
@@ -26,7 +28,7 @@ class ConfigurationUtility
     public function __construct()
     {
         $this->objectManager = GeneralUtility::makeInstance('TYPO3\CMS\Extbase\Object\ObjectManager');
-        $this->typoScriptService = $this->objectManager->get('TYPO3\\CMS\\Extbase\\Service\\TypoScriptService');
+        $this->typoScriptService = $this->objectManager->get('TYPO3\CMS\Core\TypoScript\TypoScriptService');
     }
 
     /**
@@ -34,11 +36,11 @@ class ConfigurationUtility
      */
     protected function getTypoScriptSetup()
     {
-        if (!$GLOBALS['TSFE'] instanceof \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController) {
+        if (!$GLOBALS['TSFE'] instanceof TypoScriptFrontendController) {
             return [];
         }
 
-        if (!$GLOBALS['TSFE']->tmpl instanceof \TYPO3\CMS\Core\TypoScript\TemplateService) {
+        if (!$GLOBALS['TSFE']->tmpl instanceof TemplateService) {
             return [];
         }
         return $GLOBALS['TSFE']->tmpl->setup;
