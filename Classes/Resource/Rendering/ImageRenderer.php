@@ -2,12 +2,15 @@
 
 namespace C1\FluidStyledSvg\Resource\Rendering;
 
+use C1\FluidStyledSvg\Utility\FileUtility;
+use C1\FluidStyledSvg\Utility\ConfigurationUtility;
+use TYPO3\CMS\Core\Http\ApplicationType;
+use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Resource\FileInterface;
 use TYPO3\CMS\Core\Resource\FileReference;
 use TYPO3\CMS\Core\Resource\Rendering\FileRendererInterface;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Extbase\Object\ObjectManager;
 use TYPO3Fluid\Fluid\Core\ViewHelper\TagBuilder;
 
 /**
@@ -20,30 +23,28 @@ class ImageRenderer implements FileRendererInterface
     const WRAPPERCLASS = 'c1-svg__wrapper';
     const IMAGECLASS = 'c1-svg__image';
 
-    /**
-     * @var ObjectManager
-     */
-    protected $objectManager;
+    private ?PageRenderer $pageRenderer = null;
 
-    /**
-     * @var PageRenderer
-     */
-    protected $pageRenderer;
+    public function injectPageRenderer(PageRenderer $pageRenderer)
+    {
+        $this->pageRenderer = $pageRenderer;
+    }
 
-    /**
-     * @var TagBuilder
-     */
-    protected $tagBuilder;
+    private ?TagBuilder $tagBuilder = null;
 
-    /**
-     * @var \C1\FluidStyledSvg\Utility\FileUtility
-     */
-    protected $fileUtility;
+    private ?FileUtility $fileUtility = null;
 
-    /**
-     * @var \C1\FluidStyledSvg\Utility\ConfigurationUtility
-     */
-    protected $configurationUtility;
+    public function injectFileUtility(FileUtility $fileUtility)
+    {
+        $this->fileUtility = $fileUtility;
+    }
+
+    private ConfigurationUtility $configurationUtility;
+
+    public function injectConfigurationUtility(ConfigurationUtility $configurationUtility)
+    {
+        $this->configurationUtility = $configurationUtility;
+    }
 
     /**
      * @var array
@@ -58,7 +59,7 @@ class ImageRenderer implements FileRendererInterface
     protected $settings;
 
     /**
-     * @var \TYPO3\CMS\Core\Resource\File
+     * @var File
      */
     protected $imageFile;
 
@@ -95,18 +96,18 @@ class ImageRenderer implements FileRendererInterface
     /**
      * @var array
      */
-    protected $imgClassNames;
+    protected $imgClassNames = [];
 
     /**
      * constructor
      */
     public function __construct()
     {
-        $this->objectManager = GeneralUtility::makeInstance('TYPO3\CMS\Extbase\Object\ObjectManager');
-        $this->pageRenderer = $this->objectManager->get('TYPO3\\CMS\\Core\\Page\\PageRenderer');
-        $this->tagBuilder = $this->objectManager->get('TYPO3Fluid\\Fluid\\Core\\ViewHelper\\TagBuilder');
-        $this->fileUtility = $this->objectManager->get('C1\\FluidStyledSvg\\Utility\\FileUtility');
-        $this->configurationUtility = $this->objectManager->get('C1\\FluidStyledSvg\\Utility\\ConfigurationUtility');
+        $this->tagBuilder = GeneralUtility::makeInstance(TagBuilder::class);
+    }
+
+    private function setConfiguration()
+    {
         $this->settings = $this->configurationUtility->getConfiguration();
     }
 
@@ -124,7 +125,8 @@ class ImageRenderer implements FileRendererInterface
      */
     public function canRender(FileInterface $file)
     {
-        return TYPO3_MODE === 'FE' && in_array($file->getMimeType(), $this->possibleMimeTypes, true);
+        return ApplicationType::fromRequest($GLOBALS['TYPO3_REQUEST'])->isFrontend()
+            && in_array($file->getMimeType(), $this->possibleMimeTypes, true);
     }
 
     /**
@@ -133,6 +135,7 @@ class ImageRenderer implements FileRendererInterface
      */
     protected function init($file, $width, $height, $options)
     {
+        $this->setConfiguration();
         $this->originalFile = $file;
 
         if ($file instanceof FileReference) {
@@ -170,7 +173,7 @@ class ImageRenderer implements FileRendererInterface
     protected function addImgClassNames($classNames)
     {
         foreach (explode(' ', $classNames) as $cl) {
-            if (! in_array($cl, $this->imgClassNames)) {
+            if (!in_array($cl, $this->imgClassNames)) {
                 $this->imgClassNames[] = $cl;
             }
         }
@@ -205,7 +208,6 @@ class ImageRenderer implements FileRendererInterface
         $aspectRatioDotted = \preg_replace('/\./i', 'dot', $aspectRatio);
         $tagBuilder = new $this->tagBuilder();
         $tagBuilder->setTagName('div');
-
 
 
         $className = 'c1-svg__wrapper--pb-' . $aspectRatioDotted . '-w-' . $this->defaultProcessConfiguration['width'];
@@ -268,11 +270,12 @@ class ImageRenderer implements FileRendererInterface
      */
     public function render(
         FileInterface $file,
-        $width,
-        $height,
-        array $options = array(),
-        $usedPathsRelativeToCurrentScript = false
-    ) {
+                      $width,
+                      $height,
+        array         $options = array(),
+                      $usedPathsRelativeToCurrentScript = false
+    )
+    {
         $this->init($file, $width, $height, $options);
         return $this->renderImg();
     }

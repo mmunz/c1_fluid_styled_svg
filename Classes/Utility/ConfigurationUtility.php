@@ -5,30 +5,15 @@ namespace C1\FluidStyledSvg\Utility;
 use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
 use TYPO3\CMS\Core\TypoScript\TemplateService;
 use TYPO3\CMS\Core\TypoScript\TypoScriptService;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Reflection\ObjectAccess;
-use TYPO3\CMS\Extbase\Object\ObjectManager;
 
 class ConfigurationUtility
 {
+    private TypoScriptService $typoScriptService;
 
-    /**
-     * @var ObjectManager
-     */
-    protected $objectManager;
-
-    /**
-     * @var TypoScriptService
-     */
-    protected $typoScriptService;
-
-    /**
-     * constructor
-     */
-    public function __construct()
+    public function injectTypoScriptService(TypoScriptService $typoScriptService)
     {
-        $this->objectManager = GeneralUtility::makeInstance('TYPO3\CMS\Extbase\Object\ObjectManager');
-        $this->typoScriptService = $this->objectManager->get('TYPO3\CMS\Core\TypoScript\TypoScriptService');
+        $this->typoScriptService = $typoScriptService;
     }
 
     /**

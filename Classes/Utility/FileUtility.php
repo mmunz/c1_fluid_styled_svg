@@ -2,6 +2,7 @@
 
 namespace C1\FluidStyledSvg\Utility;
 
+use TYPO3\CMS\Core\Resource\File;
 class FileUtility
 {
 
@@ -11,11 +12,10 @@ class FileUtility
      * If that fails, then try to get the alternative text from the original file
      * If that also fails, then return an empty string
      *
-     * @param \TYPO3\CMS\Core\Resource\File $file
+     * @param File $file
      * @param array $options
      * @return string
      */
-
     public function getAltText($file, $options = [])
     {
         $altText = '';
