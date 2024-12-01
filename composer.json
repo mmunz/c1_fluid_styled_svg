@@ -18,7 +18,9 @@
         }
     ],
     "require": {
-        "typo3/cms-core": "^10.4 || ^11.5.0"
+        "ext-dom": "*",
+        "ext-libxml": "*",
+        "typo3/cms-core": "^13.4"
     },
     "autoload": {
         "psr-4": {
@@ -28,6 +30,12 @@
     "extra": {
         "typo3/cms": {
             "extension-key": "c1_fluid_styled_svg"
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "typo3/cms-composer-installers": true,
+            "typo3/class-alias-loader": true
         }
     }
 }

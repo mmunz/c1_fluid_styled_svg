@@ -1,8 +1,0 @@
-tx_c1_fluid_styled_svg {
-    settings {
-        // inline files smaller than this value. Bigger svgs are loaded using ajax.
-        inlineSmallerThan = 0
-        js = EXT:c1_fluid_styled_svg/Resources/Public/JavaScript/fluid_styled_svg.js
-        css = EXT:c1_fluid_styled_svg/Resources/Public/Stylesheets/c1-fluid-styled-svg.css
-    }
-}

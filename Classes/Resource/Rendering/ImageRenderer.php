@@ -3,13 +3,14 @@
 namespace C1\FluidStyledSvg\Resource\Rendering;
 
 use C1\FluidStyledSvg\Utility\FileUtility;
-use C1\FluidStyledSvg\Utility\ConfigurationUtility;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use TYPO3\CMS\Core\Http\ApplicationType;
-use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Resource\FileInterface;
 use TYPO3\CMS\Core\Resource\FileReference;
 use TYPO3\CMS\Core\Resource\Rendering\FileRendererInterface;
+use TYPO3\CMS\Core\Site\Entity\SiteSettings;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3Fluid\Fluid\Core\ViewHelper\TagBuilder;
 
@@ -19,121 +20,54 @@ use TYPO3Fluid\Fluid\Core\ViewHelper\TagBuilder;
  */
 class ImageRenderer implements FileRendererInterface
 {
+    final public const WRAPPERCLASS = 'c1-svg__wrapper';
+    final public const IMAGECLASS = 'c1-svg__image';
 
-    const WRAPPERCLASS = 'c1-svg__wrapper';
-    const IMAGECLASS = 'c1-svg__image';
+    private ?TagBuilder $tagBuilder;
 
-    private ?PageRenderer $pageRenderer = null;
-
-    public function injectPageRenderer(PageRenderer $pageRenderer)
-    {
-        $this->pageRenderer = $pageRenderer;
-    }
-
-    private ?TagBuilder $tagBuilder = null;
-
-    private ?FileUtility $fileUtility = null;
-
-    public function injectFileUtility(FileUtility $fileUtility)
-    {
-        $this->fileUtility = $fileUtility;
-    }
-
-    private ConfigurationUtility $configurationUtility;
-
-    public function injectConfigurationUtility(ConfigurationUtility $configurationUtility)
-    {
-        $this->configurationUtility = $configurationUtility;
-    }
-
-    /**
-     * @var array
-     */
-    protected $possibleMimeTypes = [
+    protected array $possibleMimeTypes = [
         'image/svg+xml'
     ];
-
-    /**
-     * @var array
-     */
-    protected $settings;
-
-    /**
-     * @var File
-     */
-    protected $imageFile;
-
-    /**
-     * @var FileInterface
-     */
-    protected $originalFile;
-
-    /**
-     * @var string
-     */
-    protected $altText;
-
-    /**
-     * @var array
-     */
-    protected $additionalConfig;
-
-    /**
-     * @var array
-     */
-    protected $additionalAttributes;
-
-    /**
-     * @var array
-     */
-    protected $defaultProcessConfiguration;
-
-    /**
-     * @var array
-     */
-    protected $options;
-
-    /**
-     * @var array
-     */
-    protected $imgClassNames = [];
+    protected SiteSettings $settings;
+    protected ?FileInterface $imageFile;
+    protected ?FileInterface $originalFile;
+    protected string $altText;
+    protected array $additionalConfig;
+    protected array $additionalAttributes;
+    protected array $defaultProcessConfiguration;
+    protected array $options;
+    protected array $imgClassNames = [];
 
     /**
      * constructor
      */
-    public function __construct()
+    public function __construct(
+        private readonly PageRenderer $pageRenderer,
+        private readonly FileUtility $fileUtility,
+    )
     {
         $this->tagBuilder = GeneralUtility::makeInstance(TagBuilder::class);
     }
 
-    private function setConfiguration()
+    private function setConfiguration(): void
     {
-        $this->settings = $this->configurationUtility->getConfiguration();
+        $request = $GLOBALS['TYPO3_REQUEST'];
+        $site = $request->getAttribute('site');
+        $this->settings = $site->getSettings();
     }
 
-    /**
-     * @return int
-     */
-    public function getPriority()
+    public function getPriority(): int
     {
         return 5;
     }
 
-    /**
-     * @param FileInterface $file
-     * @return bool
-     */
-    public function canRender(FileInterface $file)
+    public function canRender(FileInterface $file): bool
     {
         return ApplicationType::fromRequest($GLOBALS['TYPO3_REQUEST'])->isFrontend()
             && in_array($file->getMimeType(), $this->possibleMimeTypes, true);
     }
 
-    /**
-     * @param array $options
-     * @return void
-     */
-    protected function init($file, $width, $height, $options)
+    protected function init(FileInterface $file, int $width, int $height, array $options): void
     {
         $this->setConfiguration();
         $this->originalFile = $file;
@@ -145,64 +79,60 @@ class ImageRenderer implements FileRendererInterface
         }
 
         $this->defaultProcessConfiguration = [];
-        $this->defaultProcessConfiguration['width'] = (int)$width;
-        $this->defaultProcessConfiguration['height'] = (int)$height;
+        $this->defaultProcessConfiguration['width'] = $width;
+        $this->defaultProcessConfiguration['height'] = $height;
         // cropping not implemented yet. maybe possible with manipulating the viewport of the svg
         // $this->defaultProcessConfiguration['crop'] = $this->originalFile->getProperty('crop');
 
         // alternative text
         $this->altText = $this->fileUtility->getAltText($this->imageFile, $options);
 
-        is_array($options['additionalConfig']) ? $this->additionalConfig = $options['additionalConfig'] : null;
+        if (array_key_exists('additionalConfig', $options) && is_array($options['additionalConfig'])) {
+            $this->additionalConfig = $options['additionalConfig'];
+        }
 
-        if (is_array($options['additionalAttributes'])) {
+        if (array_key_exists('additionalAttributes', $options) && is_array($options['additionalAttributes'])) {
             $this->additionalAttributes = $options['additionalAttributes'];
         }
 
-        if ($options['class']) {
+        if (array_key_exists('class', $options) && !empty($options['class'])) {
             $this->addImgClassNames($options['class']);
         }
+
         $this->addImgClassNames(self::IMAGECLASS);
         $this->options = $options;
     }
 
-    /**
+    /*
      * Adds one or more classes to this->imageClassNames
-     * @return void
      */
-    protected function addImgClassNames($classNames)
+    protected function addImgClassNames($classNames): void
     {
-        foreach (explode(' ', $classNames) as $cl) {
+        foreach (explode(' ', (string) $classNames) as $cl) {
             if (!in_array($cl, $this->imgClassNames)) {
                 $this->imgClassNames[] = $cl;
             }
         }
     }
 
-    /**
-     * Outputs the current css classes as string
-     * @return string
-     */
-    protected function getImgClassNames()
+    protected function getImgClassNames(): string
     {
         return implode(" ", $this->imgClassNames);
     }
 
-    /**
+    /*
      * Returns the current aspect ratio of the svg
-     * @return float
      */
-    protected function getAspectRatio()
+    protected function getAspectRatio(): float
     {
         $ratio = ($this->defaultProcessConfiguration['height'] / $this->defaultProcessConfiguration['width']) * 100;
         return round($ratio, 2);
     }
 
-    /**
+    /*
      * Render a ratio box wrapper tag
-     * @return string
      */
-    protected function ratioBox($content)
+    protected function ratioBox($content): string
     {
         $aspectRatio = $this->getAspectRatio();
         $aspectRatioDotted = \preg_replace('/\./i', 'dot', $aspectRatio);
@@ -227,12 +157,15 @@ class ImageRenderer implements FileRendererInterface
 
     /**
      * Renders the image tag
-     * @return string
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
-    protected function renderImg()
+    protected function renderImg(): string
     {
         $tagBuilder = new $this->tagBuilder();
-        if ($this->imageFile->getSize() < $this->settings['inlineSmallerThan']) {
+        $inlineSmallerThan = $this->settings->get('c1FluidStyledSvg.inlineSmallerThan');
+
+        if ($this->imageFile->getSize() < $inlineSmallerThan) {
             // inline the svg
             $svgRaw = $this->imageFile->getContents();
             $xmlDocument = new \DOMDocument();
@@ -251,7 +184,7 @@ class ImageRenderer implements FileRendererInterface
             $tagBuilder->addAttribute('type', 'image/svg+xml');
             if (!empty($this->altText)) {
                 $tagBuilder->addAttribute('name', $this->altText);
-            };
+            }
             $tagBuilder->addAttribute('class', $this->getImgClassNames() . ' c1-svg__image--inject');
             $tagBuilder->addAttribute('width', $this->defaultProcessConfiguration['width']);
             $tagBuilder->addAttribute('height', $this->defaultProcessConfiguration['height']);
@@ -265,18 +198,17 @@ class ImageRenderer implements FileRendererInterface
      * @param int|string $width TYPO3 known format; examples: 220, 200m or 200c
      * @param int|string $height TYPO3 known format; examples: 220, 200m or 200c
      * @param array $options
-     * @param bool $usedPathsRelativeToCurrentScript See $file->getPublicUrl()
      * @return string
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public function render(
         FileInterface $file,
                       $width,
                       $height,
-        array         $options = array(),
-                      $usedPathsRelativeToCurrentScript = false
-    )
-    {
-        $this->init($file, $width, $height, $options);
+        array         $options = []
+    ): string {
+        $this->init($file, (int) $width, (int) $height, $options);
         return $this->renderImg();
     }
 

@@ -1,0 +1,30 @@
+categories:
+    c1FluidStyledSvg:
+        label: 'Fluid Styled SVG'
+    c1FluidStyledSvg.assets:
+        label: 'Assets'
+        parent: c1FluidStyledSvg
+    c1FluidStyledSvg.settings:
+        label: 'Settings'
+        parent: c1FluidStyledSvg
+
+settings:
+    c1FluidStyledSvg.inlineSmallerThan:
+        category: c1FluidStyledSvg.settings
+        label: 'Inline SVG smaller than'
+        description: 'SVGs smaller than this size will be inlined'
+        type: int
+        default: 4000
+    c1FluidStyledSvg.cssFile:
+        category: c1FluidStyledSvg.assets
+        label: 'CSS file'
+        description: 'Path to CSS file'
+        type: string
+        default: 'EXT:c1_fluid_styled_svg/Resources/Public/Stylesheets/c1-fluid-styled-svg.css'
+    c1FluidStyledSvg.jsFile:
+        category: c1FluidStyledSvg.assets
+        label: 'JS file'
+        description: 'Path to JS file'
+        type: string
+        default: 'EXT:c1_fluid_styled_svg/Resources/Public/JavaScript/fluid_styled_svg.js'
+

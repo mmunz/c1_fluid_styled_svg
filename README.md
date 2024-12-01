@@ -9,6 +9,6 @@ in an object tag inside a noscript tag.
 ```
 Configuration
 
-    see constants.txt
+    see Configuration/Sets/Default/
 
 ```

@@ -1,0 +1,14 @@
+tx_c1_fluid_styled_svg {
+    settings {
+        inlineSmallerThan = {$c1FluidStyledSvg.inlineSmallerThan}
+    }
+}
+
+page {
+    includeCSS {
+        fluid_styled_svg = {$c1FluidStyledSvg.cssFile}
+    }
+    includeJSFooter {
+        fluid_styled_svg = {$c1FluidStyledSvg.jsFile}}
+    }
+}

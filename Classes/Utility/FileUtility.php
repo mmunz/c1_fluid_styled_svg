@@ -19,7 +19,7 @@ class FileUtility
     public function getAltText($file, $options = [])
     {
         $altText = '';
-        if ($options['alt']) {
+        if (isset($options['alt'])) {
             $altText = $options['alt'];
         } elseif ($file->getProperty('alternative')) {
             $altText = $file->getProperty('alternative');
