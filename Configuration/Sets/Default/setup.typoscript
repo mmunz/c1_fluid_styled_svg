@@ -9,6 +9,6 @@ page {
         fluid_styled_svg = {$c1FluidStyledSvg.cssFile}
     }
     includeJSFooter {
-        fluid_styled_svg = {$c1FluidStyledSvg.jsFile}}
+        fluid_styled_svg = {$c1FluidStyledSvg.jsFile}
     }
 }
