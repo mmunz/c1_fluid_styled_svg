@@ -1,7 +1,7 @@
 {
     "name": "c1/c1-fluid-styled-svg",
     "type": "typo3-cms-extension",
-    "description": "Better svg rendering with the f:media viewhelper. Registers a custom ImageRenderer for svg.",
+    "description": "C1 Fluid Styled Content SVG Renderer - Better svg rendering with the f:media viewhelper. Registers a custom ImageRenderer for svg.",
     "keywords": [
         "TYPO3",
         "fluid",
@@ -9,8 +9,8 @@
         "svg",
         "images"
     ],
-    "homepage": "https://github.com/mmunz/c1_fluid-styled-svg",
-    "license": "GPL-2.0+",
+    "homepage": "https://github.com/mmunz/c1_fluid_styled_svg",
+    "license": "GPL-2.0-or-later",
     "authors": [
         {
             "name": "Manuel Munz",
@@ -20,7 +20,7 @@
     "require": {
         "ext-dom": "*",
         "ext-libxml": "*",
-        "typo3/cms-core": "^13.4"
+        "typo3/cms-core": "^13.4 || ^14.3"
     },
     "autoload": {
         "psr-4": {
@@ -29,7 +29,11 @@
     },
     "extra": {
         "typo3/cms": {
-            "extension-key": "c1_fluid_styled_svg"
+            "extension-key": "c1_fluid_styled_svg",
+            "version": "2.1.0",
+            "Package": {
+                "providesPackages": {}
+            }
         }
     },
     "config": {
