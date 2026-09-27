@@ -149,7 +149,7 @@ class ImageRenderer implements FileRendererInterface
         );
         // add css for the className to the head.
         // Because of the unique key used there won't be multiple css rules for the same thing.
-        $this->pageRenderer->addCssInlineBlock($className, $css, true);
+        $this->pageRenderer->addCssInlineBlock($className, $css);
         $tagBuilder->addAttribute('class', self::WRAPPERCLASS . ' ' . $className);
         $tagBuilder->setContent($content);
         return $tagBuilder->render();
