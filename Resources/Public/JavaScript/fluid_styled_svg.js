@@ -18,16 +18,12 @@ function scopepreserver(el) {
 
 function injectSvg(target) {
     if (target.contentDocument) {
-        var xmlDoc = target.contentDocument.documentElement;
-        var svg = $(xmlDoc)[0];
-        var width = target.getAttribute('width');
-        var height = target.getAttribute('height');
+        var svg = target.contentDocument.documentElement;
         var classNames = target.getAttribute('class').replace('c1-svg__image--inject', 'c1-svg__image--injected');
 
         svg.setAttribute('width', '100%');
         svg.setAttribute('height', '100%');
         svg.setAttribute('class', classNames);
-        target.removeEventListener('load', scopepreserver);
         target.parentNode.replaceChild(svg, target);
     } else {
         throw('target.contentDocument is empty.')
